@@ -9,4 +9,7 @@ import lombok.Setter;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class GeoEncodingDto {
     private Address address;
+    private String place;
+    private Float longitude;
+    private Float latitude;
 }

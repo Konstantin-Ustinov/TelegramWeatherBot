@@ -1,7 +1,9 @@
 package com.bot.telegramweatherbot.listeners;
 
 import com.bot.telegramweatherbot.dto.GeoEncodingDto;
-import com.bot.telegramweatherbot.services.GeoEncodingService;
+import com.bot.telegramweatherbot.entities.User;
+import com.bot.telegramweatherbot.services.TelegramBotService;
+import com.bot.telegramweatherbot.services.UserService;
 import com.pengrad.telegrambot.TelegramBot;
 import com.pengrad.telegrambot.UpdatesListener;
 import com.pengrad.telegrambot.model.Message;
@@ -22,11 +24,13 @@ public class TelegramBotUpdatesListener implements UpdatesListener {
     private Logger logger = LoggerFactory.getLogger(TelegramBotUpdatesListener.class);
 
     private final TelegramBot telegramBot;
-    private final GeoEncodingService geoEncodingService;
+    private final TelegramBotService telegramBotService;
+    private final UserService userService;
 
-    public TelegramBotUpdatesListener(TelegramBot telegramBot, GeoEncodingService geoEncodingService) {
+    public TelegramBotUpdatesListener(TelegramBot telegramBot, TelegramBotService telegramBotService, UserService userService) {
         this.telegramBot = telegramBot;
-        this.geoEncodingService = geoEncodingService;
+        this.telegramBotService = telegramBotService;
+        this.userService = userService;
     }
 
     @PostConstruct
@@ -45,14 +49,33 @@ public class TelegramBotUpdatesListener implements UpdatesListener {
              String text = message.text();
 
              if ("/start".equals(text)) {
-                telegramBot.execute(welcomeMessage(chatId));
+                 if (userService.save(new User(message.chat().firstName(), message.chat().id())) != null) {
+                     telegramBot.execute(welcomeMessage(chatId));
+                 } else {
+                     logger.error("Error wile save newUser");
+                     telegramBot.execute(new SendMessage(message.chat().id(),
+                 """
+                        Не получилось сохранить Вас.
+                        Попробуйте снова отправить "/start"
+                        """));
+                 }
              }
 
              if (message.location() != null) { // Если пришла локация от кнопки
                  logger.info("Location: {}", message.location());
-                 String place = geoEncodingService.geoEncodingLocationToPlace(message);
+                 GeoEncodingDto geoEncodingDto = telegramBotService.coordinatesToPlace(message.location().longitude(),
+                         message.location().latitude());
 
-                 telegramBot.execute(new SendMessage(chatId,  place));
+                 if (userService.addLocationToUser(message.chat().id(), geoEncodingDto) != null) {
+                     telegramBot.execute(new SendMessage(chatId, "Ваша локация: \n" + geoEncodingDto.getPlace()));
+                 } else {
+                     telegramBot.execute(new SendMessage(message.chat().id(),
+                             """
+                                    Не получилось сохранить Ваше местоположение.
+                                    Попробуйте снова нажать на кнопку.
+                                    """));
+                 }
+
              }
             });
         } catch (Exception e) {

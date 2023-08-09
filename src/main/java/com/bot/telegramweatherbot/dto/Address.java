@@ -18,7 +18,7 @@ public class Address {
     public String toString() {
         return "Address{" +
                 "municipality='" + municipality + '\'' +
-                ", city='" + city + '\'' +
+                ", place='" + city + '\'' +
                 ", suburb='" + suburb + '\'' +
                 ", state='" + state + '\'' +
                 ", country='" + country + '\'' +
