@@ -5,6 +5,9 @@ import com.bot.telegramweatherbot.entities.User;
 import com.bot.telegramweatherbot.repositories.UserRepository;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalTime;
+import java.util.regex.Matcher;
+
 @Service
 public class UserService {
 
@@ -25,5 +28,16 @@ public class UserService {
         user.setPlace(geoEncodingDto.getPlace());
 
         return userRepository.save(user);
+    }
+
+    public User setNotificationTime(Long chatId, Matcher matcher) {
+
+        LocalTime notificationTime = LocalTime.of(Integer.parseInt(matcher.group(1)), Integer.parseInt(matcher.group(2)));
+
+        User user = userRepository.findByChatId(chatId);
+        user.setNotificationTime(notificationTime);
+        userRepository.save(user);
+
+        return user;
     }
 }

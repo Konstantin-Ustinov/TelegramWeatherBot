@@ -26,6 +26,7 @@ public class User {
     public User(String name, Long chatId) {
         this.userName = name;
         this.chatId = chatId;
+        this.notificationTime = LocalTime.of(8, 0);
     }
 
     @Override
