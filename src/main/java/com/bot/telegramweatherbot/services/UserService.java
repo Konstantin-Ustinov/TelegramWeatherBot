@@ -6,6 +6,9 @@ import com.bot.telegramweatherbot.repositories.UserRepository;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.FormatStyle;
+import java.util.List;
 import java.util.regex.Matcher;
 
 @Service
@@ -39,5 +42,9 @@ public class UserService {
         userRepository.save(user);
 
         return user;
+    }
+
+    public List<User> findAllUsersNotificationTimeNow() {
+        return userRepository.findAllByNotificationTime(LocalTime.parse(LocalTime.now().format(DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT))));
     }
 }

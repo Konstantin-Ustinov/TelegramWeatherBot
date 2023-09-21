@@ -2,12 +2,14 @@ package com.bot.telegramweatherbot.services;
 
 import com.bot.telegramweatherbot.dto.Address;
 import com.bot.telegramweatherbot.dto.GeoEncodingDto;
+import com.bot.telegramweatherbot.entities.User;
+import com.bot.telegramweatherbot.entities.Weather;
 import org.slf4j.ILoggerFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
-import java.util.Objects;
+import java.util.*;
 
 @Service
 public class TelegramBotService {
@@ -58,5 +60,12 @@ public class TelegramBotService {
             logger.error("Cant parse json or GeoEncoding service not available now.");
         }
         return geoEncodingDto;
+    }
+
+    public Set<Weather> findAllWeatherUsersNotificationTimeNow() {
+        List<User> users = userService.findAllUsersNotificationTimeNow();
+        Set<Weather> weatherList = new HashSet<>();
+        users.forEach((user) -> weatherList.add(new Weather(user.getChatId(), "Сегодня солнечно +23")));
+        return weatherList;
     }
 }

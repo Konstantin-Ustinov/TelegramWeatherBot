@@ -2,6 +2,7 @@ package com.bot.telegramweatherbot.listeners;
 
 import com.bot.telegramweatherbot.dto.GeoEncodingDto;
 import com.bot.telegramweatherbot.entities.User;
+import com.bot.telegramweatherbot.entities.Weather;
 import com.bot.telegramweatherbot.services.TelegramBotService;
 import com.bot.telegramweatherbot.services.UserService;
 import com.pengrad.telegrambot.TelegramBot;
@@ -16,14 +17,22 @@ import com.pengrad.telegrambot.request.SendMessage;
 import jakarta.annotation.PostConstruct;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.scheduling.annotation.EnableScheduling;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeFormatterBuilder;
+import java.time.format.FormatStyle;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 @Component
+@EnableScheduling
 public class TelegramBotUpdatesListener implements UpdatesListener {
 
     private final Logger logger = LoggerFactory.getLogger(TelegramBotUpdatesListener.class);
@@ -100,12 +109,12 @@ public class TelegramBotUpdatesListener implements UpdatesListener {
                     }
                 }
 
-             // Обрабатываем выбор нового времени
-              if (Objects.nonNull(update.callbackQuery())) {
-                  String text = update.callbackQuery().data();
-                  Long callBackChatId = update.callbackQuery().message().chat().id();
-                  telegramBot.execute(setTimeNotification(text, callBackChatId));
-             }
+                // Обрабатываем выбор нового времени
+                if (Objects.nonNull(update.callbackQuery())) {
+                    String text = update.callbackQuery().data();
+                    Long callBackChatId = update.callbackQuery().message().chat().id();
+                    telegramBot.execute(setTimeNotification(text, callBackChatId));
+                }
             });
         } catch (Exception e) {
             logger.error(e.getMessage());
@@ -115,11 +124,11 @@ public class TelegramBotUpdatesListener implements UpdatesListener {
 
     private SendMessage welcomeMessage(Long chatId) {
         SendMessage message = new SendMessage(chatId, """
-                                     Привет, я бот и я присылаю погоду раз в день в определенное время, которое ты выберешь.
-                                     По умолчанию - это 08:00 по твоему местному времени.
-                                     
-                                     А сейчас нажми на кнопку передать локацию, что бы я понял, где ты сейчас находишься.                                     
-                                    """);
+                 Привет, я бот и я присылаю погоду раз в день в определенное время, которое ты выберешь.
+                 По умолчанию - это 08:00 по твоему местному времени.
+                 
+                 А сейчас нажми на кнопку передать локацию, что бы я понял, где ты сейчас находишься.                                     
+                """);
         KeyboardButton geoButton = new KeyboardButton("Отправить свое местоположение").requestLocation(true);
         KeyboardButton timeButton = new KeyboardButton("Сменить время получения погоды");
         ReplyKeyboardMarkup keyboard = new ReplyKeyboardMarkup(geoButton, timeButton);
@@ -161,15 +170,22 @@ public class TelegramBotUpdatesListener implements UpdatesListener {
             User user = userService.setNotificationTime(chatId, matcher);
             if (Objects.nonNull(user)) {
                 messageText = """
-                                 Время успешно установлено. 
-                                 Погода будет приходить ежедневно в """ + " " + user.getNotificationTime();
+                        Время успешно установлено. 
+                        Погода будет приходить ежедневно в """ + " " + user.getNotificationTime();
             } else {
                 logger.error("Error in set new time notification");
                 messageText = "Не удалось установить новое время. Попробуйте еще раз.";
             }
-        } else  {
+        } else {
             messageText = "Неправильно указано время. Укажите в формате(чч:мм)";
         }
         return new SendMessage(chatId, messageText);
+    }
+
+    @Scheduled(fixedDelay = 60000)
+    private void sendWeather() {
+        Set<Weather> weatherList = telegramBotService.findAllWeatherUsersNotificationTimeNow();
+        weatherList.forEach((weather -> telegramBot.execute(new SendMessage(weather.getChatId(),
+                "Погода на сегодня: \n" + weather.getWeatherText()))));//logger.info("chatId: " + weather.getChatId() + "; weather: " + weather.getWeatherText())));
     }
 }
