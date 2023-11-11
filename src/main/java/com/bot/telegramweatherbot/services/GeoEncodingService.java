@@ -1,15 +1,10 @@
 package com.bot.telegramweatherbot.services;
 
-import com.bot.telegramweatherbot.dto.Address;
 import com.bot.telegramweatherbot.dto.GeoEncodingDto;
-import com.bot.telegramweatherbot.exceptions.GeoEncodingException;
-import com.pengrad.telegrambot.model.Message;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
-
-import java.util.Objects;
 
 @Service
 public class GeoEncodingService {

@@ -4,7 +4,6 @@ import com.bot.telegramweatherbot.dto.Address;
 import com.bot.telegramweatherbot.dto.GeoEncodingDto;
 import com.bot.telegramweatherbot.entities.User;
 import com.bot.telegramweatherbot.entities.Weather;
-import org.slf4j.ILoggerFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -18,14 +17,18 @@ public class TelegramBotService {
 
     private final UserService userService;
     private final GeoEncodingService geoEncodingService;
+    private final YaWeatherService yaWeatherService;
+    private final WeatherService weatherService;
 
-    public TelegramBotService(UserService userService, GeoEncodingService geoEncodingService) {
+    public TelegramBotService(UserService userService, GeoEncodingService geoEncodingService, YaWeatherService yaWeatherService, WeatherService weatherService) {
         this.userService = userService;
         this.geoEncodingService = geoEncodingService;
+        this.yaWeatherService = yaWeatherService;
+        this.weatherService = weatherService;
     }
 
     public GeoEncodingDto coordinatesToPlace(Float longitude, Float latitude) {
-        GeoEncodingDto geoEncodingDto = new GeoEncodingDto();
+        GeoEncodingDto geoEncodingDto;
         geoEncodingDto = geoEncodingService.geoEncodingLocationToPlace(longitude, latitude);
 
         StringBuilder textForSendMessage = new StringBuilder();
@@ -65,7 +68,10 @@ public class TelegramBotService {
     public Set<Weather> findAllWeatherUsersNotificationTimeNow() {
         List<User> users = userService.findAllUsersNotificationTimeNow();
         Set<Weather> weatherList = new HashSet<>();
-        users.forEach((user) -> weatherList.add(new Weather(user.getChatId(), "Сегодня солнечно +23")));
+        users.forEach((user) -> {
+            weatherList.add(weatherService.getWeather(user));
+            logger.info(yaWeatherService.getWeather(user).toString());
+        });
         return weatherList;
     }
 }

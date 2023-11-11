@@ -21,10 +21,6 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
-import java.time.LocalTime;
-import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeFormatterBuilder;
-import java.time.format.FormatStyle;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
@@ -64,7 +60,7 @@ public class TelegramBotUpdatesListener implements UpdatesListener {
 
                     Message message = update.message();
                     Long chatId = message.chat().id();
-                    String text = message.text();
+                    String text = Objects.nonNull(message.text()) ? message.text() : "Empty";
                     Matcher withoutLetterMather = WITHOUT_LETTER_PATTERN.matcher(text);
 
                     // Обрабатываем команду start
@@ -127,7 +123,7 @@ public class TelegramBotUpdatesListener implements UpdatesListener {
                  Привет, я бот и я присылаю погоду раз в день в определенное время, которое ты выберешь.
                  По умолчанию - это 08:00 по твоему местному времени.
                  
-                 А сейчас нажми на кнопку передать локацию, что бы я понял, где ты сейчас находишься.                                     
+                 А сейчас нажми на кнопку передать локацию, что бы я понял, где ты сейчас находишся.                                     
                 """);
         KeyboardButton geoButton = new KeyboardButton("Отправить свое местоположение").requestLocation(true);
         KeyboardButton timeButton = new KeyboardButton("Сменить время получения погоды");
@@ -184,8 +180,8 @@ public class TelegramBotUpdatesListener implements UpdatesListener {
 
     @Scheduled(fixedDelay = 60000)
     private void sendWeather() {
+
         Set<Weather> weatherList = telegramBotService.findAllWeatherUsersNotificationTimeNow();
-        weatherList.forEach((weather -> telegramBot.execute(new SendMessage(weather.getChatId(),
-                "Погода на сегодня: \n" + weather.getWeatherText()))));//logger.info("chatId: " + weather.getChatId() + "; weather: " + weather.getWeatherText())));
+        weatherList.forEach((weather -> telegramBot.execute(new SendMessage(weather.getChatId(), weather.getWeatherText()))));//logger.info("chatId: " + weather.getChatId() + "; weather: " + weather.getWeatherText())));
     }
 }
